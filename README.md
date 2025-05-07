@@ -1,13 +1,17 @@
 # Initial-gene-prediction-pipeline
 This project focuses on improving the gene annotation of Cryptococcus neoformans var. grubii H99, a major fungal pathogen, using the BRAKER3 pipeline. By integrating RNA-seq evidence with ab initio predictions, we generated an updated gene model and compared it against the existing annotation from FungiDB.
 
-The initial step for genome annotation is to download the genome and SRA files. Genome can be downloaded by using wget:
+The initial step for genome annotation is to download the genome and SRA files. 
+## Downloading Genome from FungiDB
 
 <pre> ```wget https://fungidb.org/common/downloads/Current_Release/CneoformansH99/fasta/data/FungiDB-68_CneoformansH99_Genome.fasta ``` </pre>
 
-To download the SRA files, the script is there in SRA download script.
+## Downloading SRA Files
+To download SRA files, contain the script for downloading SRA 
 
-After downloading all the datas, the next is to check the quality of the SRA files, for that we are doing FASTQC. 
+## Quality check by FastQC
+
+After downloading all the datas, the next is to check the quality of the SRA files, for that we are doing FastQC. 
 
 <pre> ``` #!/bin/bash
 
@@ -39,4 +43,5 @@ while read -r SRA_ID; do
 done < "$SRA_LIST"
 
 echo "All SRA samples processed with FastQC." ``` </pre>
-  
+
+Before gene prediction, the genome is soft-masked to identify and mask repetitive elements using RepeatModeler and RepeatMasker. This helps BRAKER3 avoid falsely predicting genes in repetitive regions. 
