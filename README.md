@@ -133,7 +133,7 @@ This step helps prepare the alignment file (in BAM format) that will be used lat
 
 Below is a job script to run HISAT2 and convert the output to BAM using `samtools`:
 
-``` bash
+<pre> ``` 
 #!/bin/bash -l
 #SBATCH -J hisat2_align
 #SBATCH -o slurm_%j.out
@@ -167,8 +167,52 @@ hisat2 -p 8 -q -x ${IDX} \
 
 
 squeue -u $USER # to chcek the status, R = running
-less rnaseq_alignment.err - # gives the log of data
+less rnaseq_alignment.err - # gives the log of data ``` <pre>
 
+## Gene Prediction Using BRAKER3
+After generating a sorted BAM file from the RNA-seq alignments and softmasked genome, BRAKER3 is used to predict gene models by integrating ab initio predictions with RNA-seq evidence and optional protein hints.
+
+<pre> #!/bin/bash -l
+#SBATCH -J braker3
+#SBATCH -o slurm_%j_braker3.out
+#SBATCH -e slurm_%j_braker3.err
+#SBATCH -t 48:00:00
+#SBATCH -c 32
+
+T=32
+SORTED_BAM=rnaseq_alignment_sorted.bam
+GENOME=genome.cleaned.fa
+PROT_DB=Fungi.fa
+WD=$(basename -s .bam ${SORTED_BAM})_$(basename -s .fa ${PROT_DB})
+
+singularity exec -B ${PWD}:${PWD},${HOME} ${HOME}/braker3.sif braker.pl \
+  --genome=${GENOME} \
+  --prot_seq=${PROT_DB} \
+  --bam=${SORTED_BAM} \
+  --workingdir=${WD} \
+  --threads=${T} \
+  --gff3
+</pre>
+
+## Gene Model Completeness Assessment with BUSCO
+To assess the completeness of predicted proteins, BUSCO is used with the Basidiomycota lineage dataset.
+
+<pre>busco -i braker.aa \
+  -l basidiomycota_odb10 \
+  -o busco_output \
+  -m protein \
+  --cpu 8</pre>
+Output: Summary of complete, fragmented, and missing orthologs in busco_output/
+
+## Annotation Comparison with GFFCompare
+To compare the structural similarity between BRAKER3 and the reference (FungiDB) annotation:
+
+<pre># Convert GFF3 to GTF (if needed)
+gffread braker.gff3 -T -o braker.gtf
+gffread fungidb_reference.gff3 -T -o fungidb_reference.gtf
+
+# Run GFFCompare
+gffcompare -r fungidb_reference.gtf -o compare_out braker.gtf </pre>
 
 
 
